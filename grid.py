@@ -22,7 +22,7 @@ class Grid:
         :param expandable: indicates whether the grid is expandable or not
 
         """
-        self.size = size  # grid size (square)
+        self.size = size
         self.expandable = expandable
         self.map = np.zeros((self.size, self.size))
         self.pos = [self.size // 2, self.size // 2]
@@ -88,7 +88,7 @@ class Grid:
         Displays the whole way of the SAW made in the current grid.
 
         :param moves: number of moves made by the saw (could be interesting for line width)
-        :return:
+        :return: None
         """
         list_coords_x = [x for x, y in self.list_points]
         list_coords_y = [y for x, y in self.list_points]
@@ -99,10 +99,11 @@ class Grid:
         plt.plot(list_coords_x, list_coords_y, linewidth=LINE_WIDTH)
         plt.show()
 
-    def test(self, tries=NB_TRIES, maximum_moves=MAXIMUM_MOVES):
+    def test(self, display_mode_activated, tries=NB_TRIES, maximum_moves=MAXIMUM_MOVES):
         """
         Runs tests with the self avoiding walks.
 
+        :param display_mode_activated: True to display the SAW.
         :param tries: number of tries.
         :param maximum_moves: maximum amount of moves.
 
@@ -126,7 +127,8 @@ class Grid:
                 self.orientation = random.choice(list_possibilities) if len(list_possibilities) > 0 else None
                 if self.orientation is None:
                     blocked = True
-                    self.display_saw(moves)
+                    if display_mode_activated:
+                        self.display_saw(moves)
                     break
                 self.move()
                 moves += 1
@@ -176,5 +178,4 @@ if __name__ == "__main__":
         plan.test(NB_TRIES, MAXIMUM_MOVES)
         print(f"{255 - size} left")"""
     plan = Grid(1000, False)
-    plan.test()
-
+    plan.test(True)

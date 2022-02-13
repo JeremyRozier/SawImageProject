@@ -2,8 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pickle
 import os
-from constants import DIC_DATA, DATA_FILENAME, CSV_FILENAME, CSV_HEADER
 import csv
+from constants import DIC_DATA, DATA_FILENAME, CSV_FILENAME, CSV_HEADER
 
 
 class Statistics:
@@ -49,13 +49,12 @@ class Statistics:
     @staticmethod
     def save_to_csv(data_filename=DATA_FILENAME, csv_filename=CSV_FILENAME):
         """
-        - Creates a csv file by reading with the dictionary stored in the file.
+        - Creates a csv file with the dictionary stored in the file 'data_filename'.
         - If the file doesn't exist, then it will create the file and store DIC_DATA.
         - Warning: Be careful, if the csv file exists, whatever happens, it will overwrite the csv content first.
 
-        :param data_filename: file's path where to get 'dic_size_statistics'.required format dic_to_save (dict) : {
+        :param data_filename: file's path where to get 'dic_size_statistics'. Required format dic_to_save (dict) : {
         size: {'average_moves': [],average_density' [], 'max_moves': [], 'min_moves': []}}.
-
         :param csv_filename: file's path where to write 'dic_size_statistics'.
 
         :return: None
