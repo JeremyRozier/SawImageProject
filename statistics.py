@@ -2,7 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pickle
 import os
-from constants import DIC_DATA, DATA_FILENAME
+from constants import DIC_DATA, DATA_FILENAME, CSV_FILENAME, CSV_HEADER
+import csv
 
 
 class Statistics:
@@ -11,13 +12,16 @@ class Statistics:
     @staticmethod
     def save(**data_arguments):
         """
-        Overwrites the data contained in 'data_filename' and saves 'dic_to_save' :
-        - size (int) : size of the grid related to the data we wanna save.
-        - dic_to_save (dict) : {size: {'average_moves': [], 'density': [], 'max': [], 'min': []}}.
-        - data_filename (str) : file's path where to serialize 'dic_to_save.'
+        - Saves the considered dictionary in the chosen file.
+        - If the file doesn't exist, then it will create the file and store DIC_DATA.
+        - Warning: Be careful, whatever happens it will overwrite the file's content first.
 
-        If the file doesn't exist, then it will create the file and store DIC_DATA.
-        Be careful, whatever happens it will overwrite the file's content first.
+        :param data_arguments:
+            - size (int) : size of the grid related to the data we wanna save.
+            - dic_to_save (dict) : {size: {'average_moves': [], 'density': [], 'max': [], 'min': []}}.
+            - data_filename (str) : file's path where to serialize 'dic_to_save.'
+
+        :return: None
         """
         if "size" not in data_arguments:
             print("Please specify the size of the grid related to the data.")
@@ -35,25 +39,59 @@ class Statistics:
         dic_to_save = data_arguments["dic_to_save"]
         data_filename = data_arguments["data_filename"]
 
-        if not os.path.isfile(data_filename):
-            with open(data_filename, 'wb') as file:
-                pickle.dump(DIC_DATA, file)
-
         new_dic = DIC_DATA
         for data_type, values in dic_to_save.items():
-            new_dic[size][data_type].append((np.sum(values)/np.size(values)).tolist())
+            new_dic[size][data_type].append((np.sum(values) / np.size(values))[0])
 
         with open(data_filename, 'wb') as file:
             pickle.dump(new_dic, file)
 
     @staticmethod
+    def save_to_csv(data_filename=DATA_FILENAME, csv_filename=CSV_FILENAME):
+        """
+        - Creates a csv file by reading with the dictionary stored in the file.
+        - If the file doesn't exist, then it will create the file and store DIC_DATA.
+        - Warning: Be careful, if the csv file exists, whatever happens, it will overwrite the csv content first.
+
+        :param data_filename: file's path where to get 'dic_size_statistics'.required format dic_to_save (dict) : {
+        size: {'average_moves': [],average_density' [], 'max_moves': [], 'min_moves': []}}.
+
+        :param csv_filename: file's path where to write 'dic_size_statistics'.
+
+        :return: None
+
+        """
+
+        if not os.path.isfile(data_filename):
+            print(f"{data_filename} doesn't exist")
+            return
+
+        with open(data_filename, 'rb') as data_file:
+            dic_size_statistics = pickle.load(data_file)
+
+        with open(csv_filename, 'w') as csv_file:
+            writer = csv.writer(csv_file)
+            writer.writerow(CSV_HEADER)
+
+            for size, dic_statistics in dic_size_statistics.items():
+                list_current_values = [size]
+
+                for statistic_name, statistic_value in dic_statistics.items():
+                    list_current_values.append(statistic_value[0])
+                writer.writerow(list_current_values)
+
+    @staticmethod
     def display(data_filename):
         """
-        Displays the data contained in 'dic_to_save' in 'data_filename' :
-         - data_filename (str) : file's path where to serialize 'dic_to_save'.
-         - required format : dic_to_save (dict) : {size: {'average_moves': [],
-        'average_density': [], 'max_moves': [], 'min_moves': []}}.
-         """
+        - Displays the data contained in 'dic_to_save' in 'data_filename'.
+
+        :param data_filename:
+            - data_filename (str) : file's path where to serialize 'dic_to_save'.
+            - required format : dic_to_save (dict) : {size: {'average_moves': [],
+            'average_density': [], 'max_moves': [], 'min_moves': []}}.
+
+        :return: None
+        """
         with open(data_filename, 'rb') as file:
             dic_size_data = pickle.load(file)
 
@@ -74,11 +112,12 @@ class Statistics:
             max_moves = dic_data["max_moves"]
             min_moves = dic_data["min_moves"]
 
-            list_average_moves += average_moves
-            list_density += density
-            list_max += max_moves
-            list_min += min_moves
+            list_average_moves.append(average_moves)
+            list_density.append(density)
+            list_max.append(max_moves)
+            list_min.append(min_moves)
 
+            # To make sure list_sizes and other lists have same length for plots
             if nb_sizes == size:
                 break
 
