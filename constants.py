@@ -9,8 +9,8 @@ DIC_ORIENTATION_COORDINATES = {
 DIC_DATA = {size: {'average_moves': 0, 'average_density': 0, 'max_moves': 0, 'min_moves': 0}
             for size in range(2, 256)}
 
-DATA_FILENAME = "data_files/stored_data.pk"
-CSV_FILENAME = "data_files/data_tables.csv"
+DATA_FILENAME = "stats/data_files/stored_data.pk"
+CSV_FILENAME = "stats/data_files/data_tables.csv"
 
 CSV_HEADER = ['size', 'average_moves', 'average_density', 'max_moves', 'min_moves']
 
