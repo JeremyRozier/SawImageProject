@@ -5,7 +5,7 @@ from constants import *
 import matplotlib.pyplot as plt
 
 
-class Grid:
+class GridBlock:
     """Class which defines and handles grids."""
 
     def __init__(self, size: int, expandable: bool):
@@ -47,11 +47,23 @@ class Grid:
 
     def expand(self):
         """Expands the grid by one unit in the direction the head of the SAW is looking."""
-        axis = DIC_ORIENTATION_COORDINATES[self.orientation][2]
-        if axis == 0:
-            self.map = np.concatenate((np.zeros((1, self.dim_shape[axis])), self.map), axis=axis)
-        elif axis == 1:
-            self.map = np.concatenate((np.zeros((self.dim_shape[axis]), 1), self.map), axis=axis)
+        if self.orientation == 'E':
+            self.map = np.concatenate((self.map, np.zeros((np.shape(self.map)[0], 1))), axis=1)
+
+        elif self.orientation == 'W':
+            self.map = np.concatenate((np.zeros((np.shape(self.map)[0], 1)), self.map), axis=1)
+            self.pos[1] += 1
+            for elem in self.list_points:
+                elem[1] += 1
+
+        elif self.orientation == 'S':
+            self.map = np.concatenate((self.map, np.zeros((1, np.shape(self.map)[1]))), axis=0)
+
+        elif self.orientation == 'N':
+            self.map = np.concatenate((np.zeros((1, np.shape(self.map)[1])), self.map), axis=0)
+            self.pos[0] += 1
+            for elem in self.list_points:
+                elem[0] += 1
 
     def get_possibilities(self):
         """
@@ -177,5 +189,5 @@ if __name__ == "__main__":
         plan = Grid(size, False)
         plan.test(NB_TRIES, MAXIMUM_MOVES)
         print(f"{255 - size} left")"""
-    plan = Grid(1000, False)
+    plan = GridBlock(1000, False)
     plan.test(True)

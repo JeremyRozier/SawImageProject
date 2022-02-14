@@ -1,17 +1,16 @@
+import time
 import numpy as np
 import random
-
-from typing import List
-
-from statistics import Statistics
-from constants import *
 import matplotlib.pyplot as plt
+from typing import List
+from constants import *
+from decorators import store_time, dic_function_time
 
 
-class Grid:
+class GridAriane:
     """Class which defines and handles grids."""
 
-    def __init__(self, size: int):
+    def __init__(self, size, expandable):
         """
         Grid's constructor :
             - map (numpy array) : contains the numpy array representing the grid.
@@ -21,43 +20,61 @@ class Grid:
             - dic_statistics (dict) : dic which contains statistics of the SAW
              (can be saved out of the class).
         :param size: square size of the grid.
-        :param expandable: indicates whether the grid is expandable or not
+        :param expandable: True if the SAW is expandable.
         """
         self.size = size
+        self.expandable = expandable
         self.map = np.zeros((self.size, self.size))
-        self.pos = [self.size - 4, self.size - 4]
-        self.list_points = [(self.size // 2, self.size // 2)]
+        self.pos = [self.size // 2, self.size // 2]
+        self.list_points = [[self.size // 2, self.size // 2]]
         self.dim_shape = tuple(reversed(np.shape(self.map)))
         self.orientation = "E"
         self.dic_statistics = DIC_DATA
         self.map[self.pos[0], self.pos[0]] = 1
+        self.ariadne = []
 
+    @store_time
     def clear(self):
         """Resets the grid to be all 0 (grid size remain the same)."""
         self.map *= 0
         self.pos = [self.size // 2, self.size // 2]
-        self.list_points = [(self.pos[0], self.pos[1])]
+        self.list_points = [[self.pos[0], self.pos[1]]]
 
+    @store_time
     def move(self):
         """Moves the SAW by 1 unit in the direction the head is looking."""
         line, column = DIC_ORIENTATION_COORDINATES[self.orientation][:2]
         self.pos[0] += line
         self.pos[1] += column
-        self.list_points.append((self.pos[0], self.pos[1]))
+        self.list_points.append([self.pos[0], self.pos[1]])
         self.map[self.pos[0]][self.pos[1]] = 1
 
-    def expand(self):  # expend the grid by one unit in the direction the head of the SAW is looking
+    @store_time
+    def expand(self):
+        """Expand the grid in the direction the head of the SAW is looking, also update coordinates when needed."""
         if self.orientation == 'E':
             self.map = np.concatenate((self.map, np.zeros((np.shape(self.map)[0], 1))), axis=1)
+
         elif self.orientation == 'W':
             self.map = np.concatenate((np.zeros((np.shape(self.map)[0], 1)), self.map), axis=1)
             self.pos[1] += 1
+            for elem in self.ariadne:
+                elem[1] += 1
+            for elem in self.list_points:
+                elem[1] += 1
+
         elif self.orientation == 'S':
             self.map = np.concatenate((self.map, np.zeros((1, np.shape(self.map)[1]))), axis=0)
+
         elif self.orientation == 'N':
             self.map = np.concatenate((np.zeros((1, np.shape(self.map)[1])), self.map), axis=0)
             self.pos[0] += 1
+            for elem in self.ariadne:
+                elem[0] += 1
+            for elem in self.list_points:
+                elem[0] += 1
 
+    @store_time
     def get_possibilities(self, coord: List[int]):
         """
         Gets available orientations around the given coordinates.
@@ -88,6 +105,7 @@ class Grid:
 
         return list_possibilities
 
+    @store_time
     def see_infinity(self, coord: List[int]):
         """
         Tells in which direction a given coordinate have a straight path to infinity.
@@ -107,12 +125,16 @@ class Grid:
 
         return directions
 
+    @store_time
     def fill_distances(self, area, current):
-        """used in pathfinding"""
+        """Create a distance field around a target. Used in pathfinding."""
+
         if current == -5:
             return area
+
         for i in range(5):
             for j in range(5):
+
                 if area[i][j] == current:
                     if i > 0:
                         if area[i - 1][j] == 0:
@@ -126,9 +148,11 @@ class Grid:
                     if j < 4:
                         if area[i][j + 1] == 0:
                             area[i][j + 1] = current - 1
+
         area = self.fill_distances(area, current - 1)
         return area
 
+    @store_time
     def pathfinding(self, start_coord, end_coord):
         """
         Checks in a 5 by 5 area centered on the starting coordinates for a path to the ending coordinates
@@ -138,17 +162,21 @@ class Grid:
         """
         if start_coord[0] == end_coord[0] and start_coord[1] == end_coord[1]:
             return []
+
         area = np.array([self.map[start_coord[0] + i][start_coord[1] - 2:start_coord[1] + 3] for i in range(-2, 3, 1)])
         end_coord = np.array(end_coord) - np.array(start_coord) + np.array([2, 2])
         delta = np.array(start_coord) - np.array([2, 2])
         start_coord = np.array([2, 2])
         area[end_coord[0]][end_coord[1]] = -1
         area = self.fill_distances(area, -1)
+
         if area[start_coord[0]][start_coord[1]] == 0:
             return None
+
         path = [start_coord]
         distance = area[start_coord[0]][start_coord[1]]
         while distance != -2:
+
             if path[-1][0] > 0:
                 if area[path[-1][0] - 1][path[-1][1]] == distance + 1:
                     path.append([path[-1][0] - 1, path[-1][1]])
@@ -169,11 +197,23 @@ class Grid:
                     path.append([path[-1][0], path[-1][1] + 1])
                     distance += 1
                     continue
+
         path.pop(0)
         for i in range(len(path)):
             path[i] += delta
+
         return path
 
+    @store_time
+    def prevent_repetition(self):
+        """If the ariadne thread pass twice at the same point, remove the excess coordinates between."""
+        for i in range(len(self.ariadne) - 1):
+            for j in range(i + 1, len(self.ariadne)):
+                if self.ariadne[i][0] == self.ariadne[j][0] and self.ariadne[i][1] == self.ariadne[j][1]:
+                    self.ariadne = self.ariadne[:i] + self.ariadne[j:]
+                    return
+
+    @store_time
     def display_saw(self, moves: int):
         """
         Displays the whole way of the SAW made in the current grid.
@@ -183,8 +223,8 @@ class Grid:
         list_coords_x = [x for x, y in self.list_points]
         list_coords_y = [y for x, y in self.list_points]
 
-        x_min, x_max = min(list_coords_x), max(list_coords_x)
-        y_min, y_max = min(list_coords_y), max(list_coords_y)
+        """x_min, x_max = min(list_coords_x), max(list_coords_x)
+        y_min, y_max = min(list_coords_y), max(list_coords_y)"""
 
         plt.plot(list_coords_x, list_coords_y, linewidth=LINE_WIDTH)
         plt.show()
@@ -204,29 +244,17 @@ class Grid:
         while attempt < tries:
             self.clear()
             moves = 0
-            ariadne = []
 
             while moves < maximum_moves:
-                for i in range(len(ariadne)):
-                    if self.map[ariadne[i][0]][ariadne[i][1]] == 1:
-                        ariadne.pop(i)
-                        break
-                for i in range(len(ariadne)):
-                    escape = False
-                    for j in range(len(ariadne)):
-                        if ariadne[i][0] == ariadne[j][0] and ariadne[i][1] == ariadne[j][1] and j != i:
-                            ariadne = ariadne[:i] + ariadne[j:]
-                            escape = True
-                            break
-                    if escape:
-                        break
                 print(moves)
+
                 infinity = self.see_infinity(self.pos)
                 if len(infinity) > 2:
                     list_possibilities = self.get_possibilities(self.pos)
                     self.orientation = random.choice(list_possibilities)
                     self.move()
                     moves += 1
+
                 elif len(infinity) == 2 or len(infinity) == 1:
                     decided = False
                     list_possibilities = self.get_possibilities(self.pos)
@@ -245,43 +273,48 @@ class Grid:
                                 list_possibilities.remove(chosen)
                                 continue
                             self.orientation = chosen
-                            ariadne = path + [np.array([self.pos[0] + line2, self.pos[1] + column2])]
+                            self.ariadne = path + [np.array([self.pos[0] + line2, self.pos[1] + column2])]
                             decided = True
                     self.move()
                     moves += 1
+
                 elif len(infinity) == 0:
                     decided = False
+                    self.prevent_repetition()
                     list_possibilities = self.get_possibilities(self.pos)
+
                     while not decided:
                         chosen = random.choice(list_possibilities)
                         line1, column1 = DIC_ORIENTATION_COORDINATES[chosen][:2]
-                        for i in range(len(ariadne)):
-                            if self.pos[0] + line1 == ariadne[i][0] and self.pos[1] + column1 == ariadne[i][1]:
-                                ariadne = ariadne[i + 1:]
+
+                        for i in range(len(self.ariadne)):
+                            if self.pos[0] + line1 == self.ariadne[i][0] and \
+                                    self.pos[1] + column1 == self.ariadne[i][1]:
+                                self.ariadne = self.ariadne[i + 1:]
                                 self.orientation = chosen
                                 decided = True
                                 break
                         if decided:
                             break
-                        path = self.pathfinding([self.pos[0] + line1, self.pos[1] + column1], ariadne[0])
+
+                        path = self.pathfinding([self.pos[0] + line1, self.pos[1] + column1], self.ariadne[0])
                         if path is None:
                             list_possibilities.remove(chosen)
                             continue
                         self.orientation = chosen
-                        ariadne = path + ariadne
+                        self.ariadne = path + self.ariadne
                         decided = True
+
                     self.move()
                     moves += 1
                 if self.pos[0] == 2 or self.pos[0] == np.shape(self.map)[0] - 3:
                     self.expand()
                 elif self.pos[1] == 2 or self.pos[1] == np.shape(self.map)[1] - 3:
                     self.expand()
+
             self.display_saw(moves)
-
             density.append(np.sum(self.map) / np.size(self.map))
-
             attempt += 1
-
         density = np.array(density)
         average_density = np.sum(density) / np.size(density)
         return
@@ -292,6 +325,10 @@ if __name__ == "__main__":
         plan = Grid(size, False)
         plan.test(NB_TRIES, MAXIMUM_MOVES)
         print(f"{255 - size} left")"""
-    plan = Grid(2000)
+    plan = GridAriane(7, True)
+    t1 = time.time()
     plan.test(True, 100000)
+    print(f"the whole program took {time.time() - t1} seconds.")
+    for function, list_seconds in dic_function_time.items():
+        print(f"Time took by {function} : {sum(list_seconds)} seconds.")
 
