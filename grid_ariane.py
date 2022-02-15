@@ -205,13 +205,13 @@ class GridAriane:
         return path
 
     @store_time
-    def prevent_repetition(self):
+    def prevent_repetition(self, path):
         """If the ariadne thread pass twice at the same point, remove the excess coordinates between."""
-        for i in range(len(self.ariadne) - 1):
-            for j in range(i + 1, len(self.ariadne)):
-                if self.ariadne[i][0] == self.ariadne[j][0] and self.ariadne[i][1] == self.ariadne[j][1]:
-                    self.ariadne = self.ariadne[:i] + self.ariadne[j:]
-                    return
+        for j in range(len(path)):
+            for i in range(len(self.ariadne)):
+                if np.array_equal(path[j], self.ariadne[i]):
+                    return path[:j] + self.ariadne[i:]
+        return path + self.ariadne
 
     @store_time
     def display_saw(self, moves: int):
@@ -280,7 +280,6 @@ class GridAriane:
 
                 elif len(infinity) == 0:
                     decided = False
-                    self.prevent_repetition()
                     list_possibilities = self.get_possibilities(self.pos)
 
                     while not decided:
@@ -302,7 +301,7 @@ class GridAriane:
                             list_possibilities.remove(chosen)
                             continue
                         self.orientation = chosen
-                        self.ariadne = path + self.ariadne
+                        self.ariadne = self.prevent_repetition(path)
                         decided = True
 
                     self.move()
@@ -321,14 +320,9 @@ class GridAriane:
 
 
 if __name__ == "__main__":
-    """for size in range(2, 256):
-        plan = Grid(size, False)
-        plan.test(NB_TRIES, MAXIMUM_MOVES)
-        print(f"{255 - size} left")"""
     plan = GridAriane(7, True)
     t1 = time.time()
     plan.test(True, 100000)
     print(f"the whole program took {time.time() - t1} seconds.")
     for function, list_seconds in dic_function_time.items():
         print(f"Time took by {function} : {sum(list_seconds)} seconds.")
-
