@@ -3,9 +3,7 @@ import numpy as np
 import random
 
 import matplotlib.animation as animation
-import ffmpeg
 from constants import *
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 from decorators import store_time, dic_function_time
 
@@ -31,7 +29,9 @@ class GridAriane:
         self.rank = 1
         self.length = length
 
-        self.fig, self.ax = plt.subplots()
+        self.fig = plt.figure()
+        self.ax = self.fig.add_subplot(1, 1, 1)
+        self.step = (self.length // 455) + 1
 
     @store_time
     def move(self):
@@ -105,28 +105,24 @@ class GridAriane:
                     self.expand()
                 elif self.pos[1] == 2 or self.pos[1] == np.shape(self.map)[1] - 3:
                     self.expand()
+        self.display_saw()
 
-    def animate(self, i, frame_factor):
+    def animate(self, i):
         """
         Animation of the saw with matplotlib.
         :param i : ith current frame of the animation (0 à FRAMES - 1).
         """
-        self.ax.clear()
-        self.ax.plot(self.list_points_x[:i*frame_factor],
-                     self.list_points_y[:i*frame_factor])
+        self.ax.plot(self.list_points_x[(i - 1) * self.step - 1:i * self.step],
+                     self.list_points_y[(i - 1) * self.step - 1:i * self.step],
+                     c='black', linewidth=LINE_WIDTH)
 
     def display_saw(self):
         """
         Displays the whole way of the SAW made in the current grid.
         :return: None
         """
-        anim = animation.FuncAnimation(self.fig, self.animate,
-                                       fargs=[(len(self.list_points_x)//FRAMES)],
-                                       frames=FRAMES,
-                                       interval=0.01)
-
-        anim.save("saw_animation.gif", writer="ffmpeg")
-        # ligne qui marche pas pour moi : anim.save("saw_animation.mp4", writer="ffmpeg")
+        anim = animation.FuncAnimation(self.fig, self.animate, interval=33)
+        plt.show()
 
 
 grid = GridAriane(100000)
@@ -135,5 +131,3 @@ grid.run()
 print(f"the whole program took {time.time() - t1} seconds.")
 for function, list_seconds in dic_function_time.items():
     print(f"Time took by {function} : {sum(list_seconds)} seconds.")
-
-grid.display_saw()
