@@ -6,4 +6,6 @@ DIC_ORIENTATION_COORDINATES = {
     "W": (0, -1, 1)
 }
 
+FRAMES = 1000
+
 LINE_WIDTH = 1
