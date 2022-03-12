@@ -28,6 +28,7 @@ class GridAriane:
         self.delta1 = 0
         self.rank = 1
         self.length = length
+        self.biases = [0.25, 0.25, 0.25, 0.25]  # [N, S, E, W]
 
         self.fig = plt.figure()
         self.ax = self.fig.add_subplot(1, 1, 1)
@@ -63,6 +64,29 @@ class GridAriane:
             self.delta0 -= 1
 
     @store_time
+    def probabilities(self, directions):
+        same = True
+        if len(directions) > 1:
+            for elem in directions[1:]:
+                if elem != directions[0]:
+                    same = False
+                    break
+            if not same:
+                if "N" in directions:
+                    for i in range(int(self.biases[0] * 100)):
+                        directions.append("N")
+                if "S" in directions:
+                    for i in range(int(self.biases[1] * 100)):
+                        directions.append("S")
+                if "E" in directions:
+                    for i in range(int(self.biases[2] * 100)):
+                        directions.append("E")
+                if "W" in directions:
+                    for i in range(int(self.biases[3] * 100)):
+                        directions.append("W")
+        return directions
+
+    @store_time
     def get_possibilities(self):
         directions = []
         if self.map[self.pos[0] - 1][self.pos[1]] == 0:
@@ -73,6 +97,8 @@ class GridAriane:
             directions.append("W")
         if self.map[self.pos[0]][self.pos[1] + 1] == 0:
             directions.append("E")
+
+        directions = self.probabilities(directions)
         return directions
 
     @store_time
