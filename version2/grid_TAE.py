@@ -148,7 +148,7 @@ class GridAriane:
         Displays the whole way of the SAW made in the current grid.
         :return: None
         """
-        anim = animation.FuncAnimation(self.fig, self.animate, frames=455, interval=33)
+        anim = animation.FuncAnimation(self.fig, self.animate, frames=910, interval=33)
         anim.save("saw_animation.gif", writer="ffmpeg")
 
 
