@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from decorators import store_time, dic_function_time
 
 
-class GridAriane:
+class GridTAE:
     """Class which defines and handles grids."""
 
     def __init__(self, length):
@@ -155,7 +155,7 @@ class GridAriane:
         anim2.save("saw_animation.gif", writer="ffmpeg")
 
 
-grid = GridAriane(10000)
+grid = GridTAE(10000)
 t1 = time.time()
 grid.run()
 print(f"the whole program took {time.time() - t1} seconds.")
