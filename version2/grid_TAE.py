@@ -138,6 +138,7 @@ class GridAriane:
         Animation of the saw with matplotlib.
         :param i : ith current frame of the animation (0 à FRAMES - 1).
         """
+
         self.ax.plot(self.list_points_x[(i - 1) * self.step - 1:i * self.step],
                      self.list_points_y[(i - 1) * self.step - 1:i * self.step],
                      c='black', linewidth=LINE_WIDTH)
@@ -147,13 +148,16 @@ class GridAriane:
         Displays the whole way of the SAW made in the current grid.
         :return: None
         """
-        anim = animation.FuncAnimation(self.fig, self.animate, interval=33)
-        plt.show()
+        anim = animation.FuncAnimation(self.fig, self.animate, frames=455, interval=33)
+        anim.save("saw_animation.gif", writer="ffmpeg")
 
 
-grid = GridAriane(100000)
+
+grid = GridAriane(10000)
 t1 = time.time()
 grid.run()
 print(f"the whole program took {time.time() - t1} seconds.")
 for function, list_seconds in dic_function_time.items():
     print(f"Time took by {function} : {sum(list_seconds)} seconds.")
+
+
