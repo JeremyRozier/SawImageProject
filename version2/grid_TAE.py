@@ -148,9 +148,11 @@ class GridAriane:
         Displays the whole way of the SAW made in the current grid.
         :return: None
         """
-        anim = animation.FuncAnimation(self.fig, self.animate, frames=910, interval=33)
-        anim.save("saw_animation.gif", writer="ffmpeg")
-
+        anim1 = animation.FuncAnimation(self.fig, self.animate, interval=33)
+        plt.show()
+        self.ax.clear()
+        anim2 = animation.FuncAnimation(self.fig, self.animate, interval=33, frames=455)
+        anim2.save("saw_animation.gif", writer="ffmpeg")
 
 
 grid = GridAriane(10000)
@@ -159,5 +161,3 @@ grid.run()
 print(f"the whole program took {time.time() - t1} seconds.")
 for function, list_seconds in dic_function_time.items():
     print(f"Time took by {function} : {sum(list_seconds)} seconds.")
-
-
