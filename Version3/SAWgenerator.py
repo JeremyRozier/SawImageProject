@@ -1,5 +1,6 @@
 import random
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 from decorators import store_time, dic_function_time
 import time
 
@@ -19,6 +20,7 @@ class Ariane:
         self.orientation = random.choice(["N", "S", "E", "W"])
         self.ariadne_coord = []
         self.ariadne_side = None
+        self.biases = [0.25, 0.25, 0.25, 0.25]
         self.dic_orientation_coordinates = {"N": (-1, 0),
                                             "S": (1, 0),
                                             "E": (0, 1),
@@ -40,12 +42,40 @@ class Ariane:
                                      "W": {"N": "left",
                                            "S": "right"}}
 
+        self.fig = plt.figure()
+        self.ax = self.fig.add_subplot(1, 1, 1)
+        self.step = (self.moves // 455) + 1
+
     @store_time
     def ever_used(self, coord):
-        if coord[0] in self.map.keys():
-            if coord[1] in self.map[coord[0]].keys():
-                return True
-        return False
+        try:
+            _ = self.map[coord[0]][coord[1]]
+            return True
+        except KeyError:
+            return False
+
+    @store_time
+    def probabilities(self, directions):
+        same = self.biases[0] == self.biases[1] == self.biases[2] == self.biases[3]
+        if len(directions) > 1 and not same:
+            for elem in directions[1:]:
+                if elem != directions[0]:
+                    same = False
+                    break
+            if not same:
+                if "N" in directions:
+                    for i in range(int(self.biases[0] * 100)):
+                        directions.append("N")
+                if "S" in directions:
+                    for i in range(int(self.biases[1] * 100)):
+                        directions.append("S")
+                if "E" in directions:
+                    for i in range(int(self.biases[2] * 100)):
+                        directions.append("E")
+                if "W" in directions:
+                    for i in range(int(self.biases[3] * 100)):
+                        directions.append("W")
+        return directions
 
     @store_time
     def get_possibilities(self):
@@ -97,12 +127,12 @@ class Ariane:
                 if self.ever_used(coord1):
                     if self.map[coord1[0]][coord1[1]] == -1:
                         to_remove = sidestep
-                        if to_remove in possibilities:
+                        while to_remove in possibilities:
                             possibilities.remove(to_remove)
                 if self.ever_used(coord2):
                     if self.map[coord2[0]][coord2[1]] == -1:
                         to_remove = self.dic_side_orientations["right"][self.orientation]
-                        if to_remove in possibilities:
+                        while to_remove in possibilities:
                             possibilities.remove(to_remove)
         if self.ariadne_side is not None:
             line1, column1 = self.dic_orientation_coordinates[self.orientation]
@@ -113,16 +143,16 @@ class Ariane:
             if self.ever_used(coord1):
                 if self.map[coord1[0]][coord1[1]] == -1:
                     to_remove = self.dic_side_orientations[opposite[self.ariadne_side]][self.orientation]
-                    if to_remove in possibilities:
+                    while to_remove in possibilities:
                         possibilities.remove(to_remove)
             coord2 = [self.y + line1 + line2, self.x + column1 + column2]
             if self.ever_used(coord2):
                 if self.map[coord2[0]][coord2[1]] == -1:
                     to_remove1 = self.orientation
                     to_remove2 = self.dic_side_orientations[opposite[self.ariadne_side]][self.orientation]
-                    if to_remove1 in possibilities:
+                    while to_remove1 in possibilities:
                         possibilities.remove(to_remove1)
-                    if to_remove2 in possibilities:
+                    while to_remove2 in possibilities:
                         possibilities.remove(to_remove2)
         return possibilities
 
@@ -152,6 +182,8 @@ class Ariane:
             boucle = abs(self.total_minmax_x[1] - self.x)
         else:
             boucle = abs(self.total_minmax_x[0] - self.x)
+        if boucle > 25:
+            boucle = 25
         while boucle >= 2:
             coord = [self.y + line * boucle, self.x + column * boucle]
             if coord[0] in self.map.keys():
@@ -289,9 +321,13 @@ class Ariane:
                 if to_ariadne is not None:
                     return to_ariadne
                 else:
-                    print("The self avoiding walk got stuck")
-                    plt.plot(self.list_x, self.list_y)
-                    plt.show()
+                    self = Ariane(self.moves)
+                    t1 = time.time()
+                    self.run()
+                    print(f"the whole program took {time.time() - t1} seconds.")
+                    for function, list_seconds in dic_function_time.items():
+                        print(f"Time took by {function} : {sum(list_seconds)} seconds.")
+                    self.display_saw()
                     quit()
 
     @store_time
@@ -328,11 +364,25 @@ class Ariane:
         if self.y > self.total_minmax_y[1]:
             self.total_minmax_y[1] = self.y
 
+    def animate(self, i):
+        self.ax.plot(self.list_x[(i - 1) * self.step - 1:i * self.step],
+                     self.list_y[(i - 1) * self.step - 1:i * self.step],
+                     c='black', linewidth=0.5)
+
+    def display_saw(self):
+        anim1 = animation.FuncAnimation(self.fig, self.animate, interval=33)
+        plt.show()
+        self.ax.clear()
+
+        # anim2 = animation.FuncAnimation(self.fig, self.animate, interval=33, frames=455)
+        # anim2.save("saw_animation.gif", writer="ffmpeg")
+
     def run(self):
         actual_move = 0
         while actual_move < self.moves:
             print(actual_move, "({}%)".format(round(actual_move / self.moves * 100)))
             possibilities = self.get_possibilities()
+            possibilities = self.probabilities(possibilities)
             if actual_move == 0:
                 possibilities = self.orientation
             possibilities = self.remove_possibilities(possibilities)
@@ -340,8 +390,6 @@ class Ariane:
             self.orientation = self.make_decision(possibilities, infinity)
             self.move()
             actual_move += 1
-        plt.plot(self.list_x, self.list_y)
-        plt.show()
 
 
 plan = Ariane(100000)
@@ -350,3 +398,4 @@ plan.run()
 print(f"the whole program took {time.time() - t1} seconds.")
 for function, list_seconds in dic_function_time.items():
     print(f"Time took by {function} : {sum(list_seconds)} seconds.")
+plan.display_saw()
