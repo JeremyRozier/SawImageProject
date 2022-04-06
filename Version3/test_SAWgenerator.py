@@ -44,12 +44,19 @@ def test_remove_possibilities():
 
 def test_anchor_ariadne():
     plan = SAWgenerator.Ariane(10000)
-    plan.anchor_ariadne("N")
-    assert plan.map[-2][0] > 0
-    assert plan.ariadne_coord[0] == [-2, 0]
-    plan.anchor_ariadne("W")
-    assert plan.map[0][-2] > 0
-    assert plan.ariadne_coord[0] == [0, -2]
+    plan.orientation = "N"
+    plan.move()
+    plan.move()
+    plan.move()
+    plan.move()
+    plan.orientation = "W"
+    plan.move()
+    plan.orientation = "S"
+    plan.move()
+    plan.anchor_ariadne("S")
+    print(plan.map)
+    assert plan.map[-1][-1] > 0
+    assert plan.ariadne_coord[0] == [0, -1]
 
 
 def test_look_for_ariadne():
@@ -74,10 +81,10 @@ def test_ariadne_turn():
     plan.ariadne_side = "right"
     plan.orientation = "N"
     plan.ariadne_turn("W")
-    assert plan.map[-1][-1] == 1
+    assert plan.map[-1][-1] == 3
     assert plan.map[-1][0] == 2
-    assert plan.map[-1][1] == 3
-    assert plan.ariadne_coord == [[-1, -1], [-1, 0], [-1, 1]]
+    assert plan.map[-1][1] == 1
+    assert plan.ariadne_coord == [[-1, 1], [-1, 0], [-1, -1]]
 
 
 def test_move():
