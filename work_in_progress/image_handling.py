@@ -181,12 +181,23 @@ class PicturePreparation(pyglet.window.Window):
                 pixel[2] = 255 - pixel[2]
                 picture[i, j] = pixel
 
+        for i in range(0, height - 1):
+            for j in range(0, width - 1):
+                pixel = picture[i, j]
+                if pixel[0] < 255 and pixel[1] < 255 and pixel[2] < 255:
+                    pixel[0] = 0
+                    pixel[1] = 0
+                    pixel[2] = 0
+                    picture[i, j] = pixel
+# on réinverse les couleurs qui étaient changé a cause des filtres
         picture = cv2.cvtColor(picture, cv2.COLOR_BGR2GRAY)
         inverter = 255 * np.ones(np.shape(picture))
         cv2.imwrite("pictures/output.jpg", picture)
         self.density_map = inverter - picture
 
+        
 
 window = PicturePreparation()
 
 pyglet.app.run()
+
