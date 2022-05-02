@@ -43,7 +43,7 @@ class PicturePreparation(pyglet.window.Window):
         self.label3 = pyglet.text.Label("Generating ...", x=185, y=210, font_size=14)
         self.result = None
         self.sprite = None
-        self.density_map = None
+        self.B_and_W_map = None
         pyglet.clock.schedule_interval(self.update, 0.016)
 
     def on_key_press(self, symbol, modifiers):
@@ -189,16 +189,22 @@ class PicturePreparation(pyglet.window.Window):
                     pixel[1] = 0
                     pixel[2] = 0
                     picture[i, j] = pixel
-# on réinverse les couleurs qui étaient changé a cause des filtres
-        picture = cv2.cvtColor(picture, cv2.COLOR_BGR2GRAY)
-        inverter = 255 * np.ones(np.shape(picture))
-        cv2.imwrite("pictures/output.jpg", picture)
-        self.density_map = inverter - picture
 
-        
+        picture = cv2.cvtColor(picture, cv2.COLOR_BGR2GRAY)
+        picture = cv2.fastNlMeansDenoising(picture, None, 50, 7, 21)
+
+        for i in range(0, height - 1):
+            for j in range(0, width - 1):
+                pixel = picture[i, j]
+                if pixel < 255:
+                    picture[i, j] = 0
+
+        picture = np.delete(np.delete(picture, -1, 1), -1, 0)
+
+        cv2.imwrite("pictures/output.jpg", picture)
+        self.B_and_W_map = picture
+
 
 window = PicturePreparation()
 
 pyglet.app.run()
-
-
