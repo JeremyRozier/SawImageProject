@@ -8,6 +8,11 @@ from SAWgenerator import WithPicture
 class PicturePreparation(pyglet.window.Window):
     def __init__(self):
         super().__init__(600, 50, "Prepare your picture", resizable=False)
+        ######################################################################
+
+        self.shape = False
+
+        ######################################################################
         self.picture_name = ""
         self.typing = True
         self.background = pyglet.shapes.Rectangle(0, 0, 2000, 2000, color=(0, 30, 50))
@@ -156,50 +161,53 @@ class PicturePreparation(pyglet.window.Window):
                 self.sprite = pyglet.sprite.Sprite(self.result, x=20, y=50)
 
     def pic_transformation(self, image):
-        mask = np.zeros(image.shape[:2], np.uint8)
+        if not self.shape:
+            mask = np.zeros(image.shape[:2], np.uint8)
 
-        bgd = np.zeros((1, 65), np.float64)
-        fgd = np.zeros((1, 65), np.float64)
+            bgd = np.zeros((1, 65), np.float64)
+            fgd = np.zeros((1, 65), np.float64)
 
-        rect = (1, 1, np.shape(image)[1] - 1, np.shape(image)[0] - 1)
+            rect = (1, 1, np.shape(image)[1] - 1, np.shape(image)[0] - 1)
 
-        cv2.grabCut(image, mask, rect, bgd, fgd, 5, cv2.GC_INIT_WITH_RECT)
-        mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
+            cv2.grabCut(image, mask, rect, bgd, fgd, 5, cv2.GC_INIT_WITH_RECT)
+            mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
 
-        picture = image * mask2[:, :, np.newaxis]
-        fgbg = cv2.createBackgroundSubtractorMOG2()
-        fgmask = fgbg.apply(picture)
-        picture = picture * fgmask[:, :, np.newaxis]
+            picture = image * mask2[:, :, np.newaxis]
+            fgbg = cv2.createBackgroundSubtractorMOG2()
+            fgmask = fgbg.apply(picture)
+            picture = picture * fgmask[:, :, np.newaxis]
 
-        height, width, _ = picture.shape
+            height, width, _ = picture.shape
 
-        for i in range(0, height - 1):
-            for j in range(0, width - 1):
-                pixel = picture[i, j]
-                pixel[0] = 255 - pixel[0]
-                pixel[1] = 255 - pixel[1]
-                pixel[2] = 255 - pixel[2]
-                picture[i, j] = pixel
-
-        for i in range(0, height - 1):
-            for j in range(0, width - 1):
-                pixel = picture[i, j]
-                if pixel[0] < 255 and pixel[1] < 255 and pixel[2] < 255:
-                    pixel[0] = 0
-                    pixel[1] = 0
-                    pixel[2] = 0
+            for i in range(0, height - 1):
+                for j in range(0, width - 1):
+                    pixel = picture[i, j]
+                    pixel[0] = 255 - pixel[0]
+                    pixel[1] = 255 - pixel[1]
+                    pixel[2] = 255 - pixel[2]
                     picture[i, j] = pixel
 
-        picture = cv2.cvtColor(picture, cv2.COLOR_BGR2GRAY)
-        picture = cv2.fastNlMeansDenoising(picture, None, 50, 7, 21)
+            for i in range(0, height - 1):
+                for j in range(0, width - 1):
+                    pixel = picture[i, j]
+                    if pixel[0] < 255 and pixel[1] < 255 and pixel[2] < 255:
+                        pixel[0] = 0
+                        pixel[1] = 0
+                        pixel[2] = 0
+                        picture[i, j] = pixel
+        if self.shape:
+            picture = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        if not self.shape:
+            picture = cv2.cvtColor(picture, cv2.COLOR_BGR2GRAY)
+            picture = cv2.fastNlMeansDenoising(picture, None, 50, 7, 21)
 
-        for i in range(0, height - 1):
-            for j in range(0, width - 1):
-                pixel = picture[i, j]
-                if pixel < 255:
-                    picture[i, j] = 0
+            for i in range(0, height - 1):
+                for j in range(0, width - 1):
+                    pixel = picture[i, j]
+                    if pixel < 255:
+                        picture[i, j] = 0
 
-        picture = np.delete(np.delete(picture, -1, 1), -1, 0)
+            picture = np.delete(np.delete(picture, -1, 1), -1, 0)
 
         cv2.imwrite("pictures/output.jpg", picture)
         self.B_and_W_map = picture
