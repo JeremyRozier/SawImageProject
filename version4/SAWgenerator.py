@@ -3,7 +3,6 @@ import math
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from decorators import store_time, dic_function_time
-import time
 import numpy as np
 
 
@@ -384,7 +383,7 @@ class Ariane:
     def step_forward(self):
         new_value = round(self.actual_move / self.moves * 100)
         if new_value != self.old_value:
-            """print(self.actual_move, "({}%)".format(new_value))"""
+            print(self.actual_move, "({}%)".format(new_value))
             self.old_value = new_value
         possibilities = self.get_possibilities()
         possibilities = self.probabilities(possibilities)
@@ -440,7 +439,7 @@ class WithPicture:
         while not self.close_enougth() or self.points < 4:
             found = False
             for i in range(16):
-                angle = self.last_angle + math.pi - math.pi * (i + 1) * 0.125
+                angle = self.last_angle + math.pi - math.pi * (i + 2) * 0.125
                 x = int(round(self.x[-1] + self.search_radius * math.cos(angle)))
                 y = int(round(self.y[-1] + self.search_radius * math.sin(angle)))
                 if 0 <= x + self.x0 < pic_size[1] and 0 <= y + self.y0 < pic_size[0]:
@@ -455,8 +454,8 @@ class WithPicture:
                 print("Cant compute contouring")
                 quit()
         self.y = [-value for value in self.y]
-        self.x = [self.x[i] for i in reversed(range(0, len(self.x), 10))]
-        self.y = [self.y[i] for i in reversed(range(0, len(self.y), 10))]
+        self.x = [self.x[i] for i in reversed(range(0, len(self.x), 1))]
+        self.y = [self.y[i] for i in reversed(range(0, len(self.y), 1))]
         plt.plot(self.x, self.y)
         plt.show()
 
@@ -469,9 +468,11 @@ class WithPicture:
             distance = math.sqrt((dx ** 2) + (dy ** 2))
             dx *= 1 / distance
             dy *= 1 / distance
-            self.distance_list.append(round(20 * distance))
+            self.distance_list.append(round(10 * distance))
             if dy != 0 and dx != 0:
                 if dx < 0 and dy < 0:
+                    angles.append(math.pi - (dy / abs(dy)) * math.atan(abs(dy / dx)))
+                elif dx < 0 < dy:
                     angles.append(math.pi - (dy / abs(dy)) * math.atan(abs(dy / dx)))
                 else:
                     angles.append((dy / abs(dy)) * math.atan(abs(dy / dx)))
